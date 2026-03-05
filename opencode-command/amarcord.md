@@ -2,15 +2,15 @@
 description: Review current session for extractable knowledge and save it as opencode commands. Run at end of any session where you debugged, found workarounds, or discovered non-obvious patterns.
 ---
 
-# /opencode-ception
+# /amarcord
 
 Extracts reusable knowledge from this session and saves it as opencode command files.
 
 ## Usage
 
 ```
-/opencode-ception                  # Review session and extract if valuable
-/opencode-ception "context hint"   # Provide hint about what was discovered
+/amarcord                  # Review session and extract if valuable
+/amarcord "context hint"   # Provide hint about what was discovered
 ```
 
 ## What This Does
@@ -64,4 +64,4 @@ Before closing, ask yourself:
 - What would I tell a colleague hitting the same issue?
 - What would I wish I knew at the start?
 
-If any answer is non-trivial, run /opencode-ception.
+If any answer is non-trivial, run /amarcord.

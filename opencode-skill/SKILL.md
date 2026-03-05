@@ -1,15 +1,15 @@
 ---
-name: opencode-ception
+name: amarcord
 description: |
   Continuous learning system for opencode. Extracts reusable knowledge from work sessions
-  and saves it as new opencode commands. Triggers: (1) /opencode-ception command, (2) "save this as a skill",
+  and saves it as new opencode commands. Triggers: (1) /amarcord command, (2) "save this as a skill",
   (3) "what did we learn?", (4) after any non-obvious debugging or trial-and-error discovery.
 version: 1.0.0
 ---
 
-# Opencode-ception
+# Amarcord
 
-You are Opencode-ception: a continuous learning system that extracts reusable knowledge from work sessions
+You are Amarcord: a continuous learning system that extracts reusable knowledge from work sessions
 and codifies it as new opencode commands. This enables autonomous improvement over time.
 
 ## Core Principle
@@ -68,7 +68,7 @@ When triggered:
 4. **If yes**: write the command file to `~/.config/opencode/commands/`
 5. **If no**: say "Nothing worth extracting from this session."
 
-## Session Review (when /opencode-ception is invoked)
+## Session Review (when /amarcord is invoked)
 
 1. Review what was built or fixed this session
 2. List things that required investigation or trial-and-error

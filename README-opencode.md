@@ -1,4 +1,4 @@
-# Opencode-ception
+# Amarcord
 
 Port of [Claudeception](https://github.com/blader/Claudeception) for [opencode](https://opencode.ai).
 
@@ -12,14 +12,14 @@ so future sessions start smarter instead of from zero.
 | `~/.claude/skills/` | `~/.config/opencode/commands/` |
 | `SKILL.md` with frontmatter | `.md` command files |
 | `UserPromptSubmit` hook | System prompt injection (see below) |
-| `Skill(claudeception)` tool | `/opencode-ception` command |
+| `Skill(claudeception)` tool | `/amarcord` command |
 
 ## Installation
 
 ### Step 1 — Add the command
 
 ```bash
-cp opencode-command/opencode-ception.md ~/.config/opencode/commands/
+cp opencode-command/amarcord.md ~/.config/opencode/commands/
 ```
 
 ### Step 2 — Enable auto-evaluation (optional but recommended)
@@ -31,7 +31,7 @@ or project-level `AGENTS.md`:
 ```
 After completing any task that involved non-obvious investigation, debugging, or
 trial-and-error, evaluate whether the session produced extractable knowledge.
-If yes, run /opencode-ception to save it as a reusable command.
+If yes, run /amarcord to save it as a reusable command.
 ```
 
 ### Step 3 — Use it
@@ -39,7 +39,7 @@ If yes, run /opencode-ception to save it as a reusable command.
 At the end of any session where you learned something non-trivial:
 
 ```
-/opencode-ception
+/amarcord
 ```
 
 opencode will review the session, decide what's worth keeping, and write a new
