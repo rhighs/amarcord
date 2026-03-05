@@ -1,46 +1,52 @@
 ---
-description: Review current session for extractable knowledge and save it as opencode commands. Run at end of any session where you debugged, found workarounds, or discovered non-obvious patterns.
+description: Extract reusable knowledge from this session and save it as opencode commands. Run at the end of any session where you debugged something, found a workaround, or figured out something non-obvious.
 ---
 
 # /amarcord
 
-Extracts reusable knowledge from this session and saves it as opencode command files.
+Reviews this session for knowledge worth keeping. Saves anything valuable as a new
+command file in `~/.config/opencode/commands/` so future sessions start smarter.
 
 ## Usage
 
 ```
-/amarcord                  # Review session and extract if valuable
-/amarcord "context hint"   # Provide hint about what was discovered
+/amarcord                        # review and extract
+/amarcord "hint about the fix"   # guide what to focus on
 ```
 
-## What This Does
+## What You Do
 
-1. Reviews the session for non-obvious discoveries
-2. Evaluates each candidate against quality criteria
-3. Checks ~/.config/opencode/commands/ for existing related files
-4. Saves new commands or updates existing ones
-5. Reports what was extracted and why
+Just run `/amarcord`. The agent does the rest.
 
-## Extraction Criteria
+## What the Agent Does
 
-Extract when:
-- Solution required significant investigation
-- Error message was misleading or root cause non-obvious
-- Workaround found through trial and error
-- Project-specific pattern not in the docs
+1. Reviews the session — what was hard? what required trial and error?
+2. Applies quality criteria (see below)
+3. Checks `~/.config/opencode/commands/` for existing related files to update
+4. Writes new command files for anything that passes
+5. Reports exactly what was saved and why
 
-Skip when:
-- Solution is in the official docs
-- One-time fix with no future value
+## Quality Criteria
 
-## Output Location
+**Save it if:**
+- Solution required significant investigation — not immediately obvious
+- Error message was misleading (root cause was different from the symptom)
+- Workaround discovered through trial and error
+- Project-specific pattern not covered in official docs
+- Configuration that differs from the standard/expected setup
 
-~/.config/opencode/commands/<kebab-name>.md
+**Skip it if:**
+- Answer is in the official docs in under a minute
+- One-time fix with zero reuse potential
+- Too project-specific to ever apply elsewhere
 
-## Command File Format
+## Output Format
 
+Each saved command follows this structure:
+
+```markdown
 ---
-description: When to use this and what problem it solves
+description: When to use this + what problem it solves
 ---
 
 # Title
@@ -49,19 +55,20 @@ description: When to use this and what problem it solves
 Exact symptom or error that triggers this
 
 ## Solution
-Step-by-step fix or pattern
+Step-by-step fix or pattern, with code examples
 
 ## Why It Works
-Root cause explanation
+Root cause explanation — why the fix works, not just what to do
 
 ## Watch Out For
-Edge cases and gotchas
+Edge cases and situations where this doesn't apply
+```
 
 ## After Each Session
 
-Before closing, ask yourself:
+Three questions worth asking before closing:
 - What took longer than expected?
 - What would I tell a colleague hitting the same issue?
 - What would I wish I knew at the start?
 
-If any answer is non-trivial, run /amarcord.
+If any answer is non-trivial → run `/amarcord`.

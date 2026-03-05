@@ -1,187 +1,140 @@
-# Claudeception
+# amarcord
 
-Every time you use an AI coding agent, it starts from zero. You spend an hour debugging some obscure error, the agent figures it out, session ends. Next time you hit the same issue? Another hour.
+> *"amarcord"* — Romagnolo dialect for "I remember." Fellini's film about memory. Also a tool that makes opencode remember what it learned.
 
-This skill fixes that. When Claude Code discovers something non-obvious (a debugging technique, a workaround, some project-specific pattern), it saves that knowledge as a new skill. Next time a similar problem comes up, the skill gets loaded automatically.
+---
 
-## Installation
+Every coding session, your AI agent figures out something non-obvious. A workaround. A debugging technique. The real root cause of a cryptic error. Then the session ends and it forgets all of it.
 
-### Step 1: Clone the skill
+**amarcord fixes this.** At the end of a session, run `/amarcord`. The agent reviews what it just did, extracts the valuable parts, and writes them as new command files. Next session, that knowledge is already there.
 
-**User-level (recommended)**
-
-```bash
-git clone https://github.com/blader/Claudeception.git ~/.claude/skills/claudeception
-```
-
-**Project-level**
-
-```bash
-git clone https://github.com/blader/Claudeception.git .claude/skills/claudeception
-```
-
-### Step 2: Set up the activation hook (recommended)
-
-The skill can activate via semantic matching, but a hook ensures it evaluates every session for extractable knowledge.
-
-#### User-level setup (recommended)
-
-1. Create the hooks directory and copy the script:
-
-```bash
-mkdir -p ~/.claude/hooks
-cp ~/.claude/skills/claudeception/scripts/claudeception-activator.sh ~/.claude/hooks/
-chmod +x ~/.claude/hooks/claudeception-activator.sh
-```
-
-2. Add the hook to your global Claude settings (`~/.claude/settings.json`):
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "~/.claude/hooks/claudeception-activator.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-#### Project-level setup
-
-1. Create the hooks directory inside your project and copy the script:
-
-```bash
-mkdir -p .claude/hooks
-cp .claude/skills/claudeception/scripts/claudeception-activator.sh .claude/hooks/
-chmod +x .claude/hooks/claudeception-activator.sh
-```
-
-2. Add the hook to your project settings (`.claude/settings.json` in the repo):
-
-```json
-{
-  "hooks": {
-    "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/claudeception-activator.sh"
-          }
-        ]
-      }
-    ]
-  }
-}
-```
-
-If you already have a `settings.json`, merge the `hooks` configuration into it.
-
-The hook injects a reminder on every prompt that tells Claude to evaluate whether the current task produced extractable knowledge. This achieves higher activation rates than relying on semantic description matching alone.
-
-## Usage
-
-### Automatic Mode
-
-The skill activates automatically when Claude Code:
-- Just completed debugging and discovered a non-obvious solution
-- Found a workaround through investigation or trial-and-error
-- Resolved an error where the root cause wasn't immediately apparent
-- Learned project-specific patterns or configurations through investigation
-- Completed any task where the solution required meaningful discovery
-
-### Explicit Mode
-
-Trigger a learning retrospective:
-
-```
-/claudeception
-```
-
-Or explicitly request skill extraction:
-
-```
-Save what we just learned as a skill
-```
-
-### What Gets Extracted
-
-Not every task produces a skill. It only extracts knowledge that required actual discovery (not just reading docs), will help with future tasks, has clear trigger conditions, and has been verified to work.
-
-## Research
-
-The idea comes from academic work on skill libraries for AI agents.
-
-[Voyager](https://arxiv.org/abs/2305.16291) (Wang et al., 2023) showed that game-playing agents can build up libraries of reusable skills over time, and that this helps them avoid re-learning things they already figured out. [CASCADE](https://arxiv.org/abs/2512.23880) (2024) introduced "meta-skills" (skills for acquiring skills), which is what this is. [SEAgent](https://arxiv.org/abs/2508.04700) (2025) showed agents can learn new software environments through trial and error, which inspired the retrospective feature. [Reflexion](https://arxiv.org/abs/2303.11366) (Shinn et al., 2023) showed that self-reflection helps.
-
-Agents that persist what they learn do better than agents that start fresh.
+---
 
 ## How It Works
 
-Claude Code has a native skills system. At startup, it loads skill names and descriptions (about 100 tokens each). When you're working, it matches your current context against those descriptions and pulls in relevant skills.
-
-But this retrieval system can be written to, not just read from. So when this skill notices extractable knowledge, it writes a new skill with a description optimized for future retrieval.
-
-The description matters a lot. "Helps with database problems" won't match anything useful. "Fix for PrismaClientKnownRequestError in serverless" will match when someone hits that error.
-
-More on the skills architecture [here](https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills).
-
-## Skill Format
-
-Extracted skills are markdown files with YAML frontmatter:
-
-```yaml
----
-name: prisma-connection-pool-exhaustion
-description: |
-  Fix for PrismaClientKnownRequestError: Too many database connections 
-  in serverless environments (Vercel, AWS Lambda). Use when connection 
-  count errors appear after ~5 concurrent requests.
-author: Claude Code
-version: 1.0.0
-date: 2024-01-15
----
-
-# Prisma Connection Pool Exhaustion
-
-## Problem
-[What this skill solves]
-
-## Context / Trigger Conditions
-[Exact error messages, symptoms, scenarios]
-
-## Solution
-[Step-by-step fix]
-
-## Verification
-[How to confirm it worked]
+```
+session ends
+    ↓
+/amarcord
+    ↓
+agent reviews: "what was non-obvious? what required trial and error?"
+    ↓
+writes ~/.config/opencode/commands/what-it-learned.md
+    ↓
+next session: that command file is available
 ```
 
-See `resources/skill-template.md` for the full template.
+The saved commands follow a simple format — problem, solution, why it works, gotchas. Enough to immediately apply the fix next time without re-investigating.
 
-## Quality Gates
+---
 
-The skill is picky about what it extracts. If something is just a documentation lookup, or only useful for this one case, or hasn't actually been tested, it won't create a skill. Would this actually help someone who hits this problem in six months? If not, no skill.
+## Install
 
-## Examples
+One command:
 
-See `examples/` for sample skills:
+```bash
+curl -fsSL https://raw.githubusercontent.com/rhighs/amarcord/main/install.sh | bash
+```
 
-- `nextjs-server-side-error-debugging/`: errors that don't show in browser console
-- `prisma-connection-pool-exhaustion/`: the "too many connections" serverless problem
-- `typescript-circular-dependency/`: detecting and fixing import cycles
+Or manually:
 
-## Contributing
+```bash
+mkdir -p ~/.config/opencode/commands
+curl -fsSL https://raw.githubusercontent.com/rhighs/amarcord/main/opencode-command/amarcord.md \
+  -o ~/.config/opencode/commands/amarcord.md
+```
 
-Contributions welcome. Fork, make changes, submit a PR.
+That's it. No config, no setup, no dependencies.
 
-## License
+---
 
-MIT
+## Usage
+
+At the end of any session where you debugged something, found a workaround, or had to figure out something non-obvious:
+
+```
+/amarcord
+```
+
+The agent will review the session and either:
+- Extract 1–3 commands and tell you what it saved
+- Say "nothing worth extracting" if the session was routine
+
+### Manual hint
+
+If you know something specific is worth saving:
+
+```
+/amarcord "the MPS dtype issue we just fixed"
+```
+
+---
+
+## What Gets Saved
+
+**Yes:**
+- Solution required >10 min of investigation
+- Error message was misleading (root cause wasn't obvious)
+- Workaround found through trial and error
+- Project-specific pattern not in any docs
+- Tool integration knowledge the docs don't cover
+
+**No:**
+- Standard stuff you'd find in the official docs in 30 seconds
+- One-off hacks with zero reuse potential
+- Secrets, credentials, anything sensitive
+
+---
+
+## Where Saved Commands Live
+
+```
+~/.config/opencode/commands/
+├── amarcord.md                    ← this tool
+├── mps-dtype-mismatch.md          ← extracted from a PyTorch session
+├── opencode-cwd-not-inherited.md  ← extracted from an opencode debugging session
+└── ...                            ← everything amarcord has learned
+```
+
+Each file is just markdown. You can read them, edit them, delete them. They're yours.
+
+---
+
+## Example Extracted Command
+
+After a session debugging PyTorch on Apple Silicon, amarcord might save:
+
+```markdown
+---
+description: Fix device mismatch errors when using PyTorch on Apple Silicon MPS.
+Use when you get "Expected all tensors to be on the same device."
+---
+
+# PyTorch MPS Device Mismatch
+
+## Problem
+RuntimeError: Expected all tensors to be on the same device
+
+## Solution
+Always pass device= explicitly when creating tensors:
+
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = model.to(device)
+    token = torch.tensor([[id]], device=device)   # ← explicit device
+
+When loading checkpoints:
+    ckpt = torch.load(path, map_location=device)  # ← not map_location="cpu"
+
+## Why It Works
+MPS and CPU tensors can't interact. map_location="cpu" silently loads to CPU
+even when MPS is available.
+
+## Watch Out For
+numpy() requires .cpu() first: tensor.cpu().numpy()
+```
+
+---
+
+## Credit
+
+Port of [Claudeception](https://github.com/blader/Claudeception) by [@blader](https://github.com/blader), adapted for [opencode](https://opencode.ai).
