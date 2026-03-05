@@ -1,138 +1,74 @@
 ---
-description: Extract reusable knowledge from this session. Saves it locally and optionally syncs to a shared team repo via PR. Run at the end of any session where you debugged something non-obvious.
+description: Extract reusable knowledge from this session and save it as opencode commands. Run at the end of any session where you debugged something, found a workaround, or figured out something non-obvious.
 ---
 
 # /amarcord
 
-Reviews this session for knowledge worth keeping. Saves it as a command file,
-checks for duplicates, and (if team sync is configured) opens a PR to share it.
+Reviews this session for knowledge worth keeping. Saves anything valuable as a new
+command file in `~/.config/opencode/commands/` so future sessions start smarter.
 
 ## Usage
 
 ```
 /amarcord                        # review and extract
-/amarcord "hint about what to extract"
+/amarcord "hint about the fix"   # guide what to focus on
 ```
 
----
+## What You Do
 
-## Step 1 — Review the session
+Just run `/amarcord`. The agent does the rest.
 
-Look back at what happened this session. Ask:
-- What required trial and error?
-- What would have saved time if documented?
-- Was the error message misleading?
+## What the Agent Does
 
-If nothing non-obvious happened → say so and stop.
+1. Reviews the session — what was hard? what required trial and error?
+2. Applies quality criteria (see below)
+3. Checks `~/.config/opencode/commands/` for existing related files to update
+4. Writes new command files for anything that passes
+5. Reports exactly what was saved and why
 
----
+## Quality Criteria
 
-## Step 2 — Determine namespace
+**Save it if:**
+- Solution required significant investigation — not immediately obvious
+- Error message was misleading (root cause was different from the symptom)
+- Workaround discovered through trial and error
+- Project-specific pattern not covered in official docs
+- Configuration that differs from the standard/expected setup
 
-Read the current git remote to determine the namespace:
+**Skip it if:**
+- Answer is in the official docs in under a minute
+- One-time fix with zero reuse potential
+- Too project-specific to ever apply elsewhere
 
-```bash
-git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*\)/\([^/]*\)\.git|\1/\2|; s|.*[:/]\([^/]*\)/\([^/]*\)|\1/\2|'
-```
+## Output Format
 
-If that returns something like `rhighs/my-project`, the namespace is `my-project`.
-If no git remote, use `general`.
-
-Skill filename format: `{namespace}:{kebab-description}.md`
-Example: `my-project:mcp-proxy-namespaced-params.md`
-
----
-
-## Step 3 — Duplicate detection
-
-List existing skills:
-
-```bash
-# opencode
-ls ~/.config/opencode/commands/*.md 2>/dev/null | xargs -I{} head -5 {} 2>/dev/null
-
-# claude code
-ls ~/.claude/skills/*/SKILL.md 2>/dev/null | xargs -I{} head -5 {} 2>/dev/null
-```
-
-Look at their descriptions. Ask yourself: is what I'm about to save already covered?
-
-**If a duplicate exists** → update it instead of creating a new file.
-**If partial overlap** → add a new section to the existing file.
-**If no overlap** → create new.
-
----
-
-## Step 4 — Write the skill
-
-### For opencode
-
-Save to `~/.config/opencode/commands/{namespace}:{name}.md`:
+Each saved command follows this structure:
 
 ```markdown
 ---
-description: One-line description. When to use it. What problem it solves.
-namespace: {namespace}
+description: When to use this + what problem it solves
 ---
 
 # Title
 
 ## Problem
-Exact symptom or error
+Exact symptom or error that triggers this
 
 ## Solution
-Step-by-step fix with code examples
+Step-by-step fix or pattern, with code examples
 
 ## Why It Works
-Root cause — not just what to do, but why it works
+Root cause explanation — why the fix works, not just what to do
 
 ## Watch Out For
-Edge cases where this doesn't apply
+Edge cases and situations where this doesn't apply
 ```
 
-### For Claude Code
+## After Each Session
 
-Create `~/.claude/skills/{namespace}:{name}/SKILL.md` with the same content but
-add YAML frontmatter:
+Three questions worth asking before closing:
+- What took longer than expected?
+- What would I tell a colleague hitting the same issue?
+- What would I wish I knew at the start?
 
-```yaml
----
-name: {namespace}:{name}
-description: |
-  Same description as above — be specific enough for semantic matching
-version: 1.0.0
----
-```
-
----
-
-## Step 5 — Team sync (if configured)
-
-Check if team sync is configured:
-
-```bash
-cat ~/.config/amarcord/team.conf 2>/dev/null
-```
-
-If the file exists and contains `TEAM_REPO_PATH`, run:
-
-```bash
-~/.config/amarcord/sync.sh {skill-file-path}
-```
-
-This copies the skill to the team repo and opens a PR. If not configured, skip silently.
-
----
-
-## Quality Criteria
-
-**Save it if:**
-- Required significant investigation — not immediately obvious
-- Error message was misleading (root cause non-obvious)
-- Workaround found through trial and error
-- Project-specific pattern not in official docs
-
-**Skip it if:**
-- Answer is in the docs in under a minute
-- Zero reuse potential
-- Too specific to ever apply elsewhere
+If any answer is non-trivial → run `/amarcord`.

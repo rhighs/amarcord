@@ -1,124 +1,140 @@
 # amarcord
 
-> *"amarcord"* — Romagnolo for "I remember." Also: makes your AI agent remember what it learned, and share it with the team.
+> *"amarcord"* — Romagnolo dialect for "I remember." Fellini's film about memory. Also a tool that makes opencode remember what it learned.
 
 ---
 
-Every session, your agent figures out something non-obvious. Then forgets it.
+Every coding session, your AI agent figures out something non-obvious. A workaround. A debugging technique. The real root cause of a cryptic error. Then the session ends and it forgets all of it.
 
-**amarcord** extracts that knowledge and saves it as a command file. Next session, it's already there. And if you're on a team, one person's discovery becomes everyone's — via a PR to a shared repo.
-
-```
-session ends → /amarcord → skill saved locally → PR opened → team benefits
-```
+**amarcord fixes this.** At the end of a session, run `/amarcord`. The agent reviews what it just did, extracts the valuable parts, and writes them as new command files. Next session, that knowledge is already there.
 
 ---
 
-## Works with both opencode and Claude Code
+## How It Works
 
-| | opencode | Claude Code |
-|---|---|---|
-| Command | `/amarcord` | `/amarcord` |
-| Skills location | `~/.config/opencode/commands/` | `~/.claude/skills/` |
-| Team sync | ✅ | ✅ |
+```
+session ends
+    ↓
+/amarcord
+    ↓
+agent reviews: "what was non-obvious? what required trial and error?"
+    ↓
+writes ~/.config/opencode/commands/what-it-learned.md
+    ↓
+next session: that command file is available
+```
+
+The saved commands follow a simple format — problem, solution, why it works, gotchas. Enough to immediately apply the fix next time without re-investigating.
 
 ---
 
 ## Install
 
-### Solo (local only)
+One command:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/rhighs/amarcord/main/install.sh | bash
 ```
 
-### Team (shared repo + PR workflow)
+Or manually:
 
 ```bash
-# 1. Create a shared repo (e.g. github.com/your-org/team-skills)
-#    Use the template at team-repo-template/ as a starting point
-
-# 2. Run setup on each machine
-curl -fsSL https://raw.githubusercontent.com/rhighs/amarcord/main/scripts/setup-team.sh \
-  | bash -s -- https://github.com/YOUR-ORG/team-skills
+mkdir -p ~/.config/opencode/commands
+curl -fsSL https://raw.githubusercontent.com/rhighs/amarcord/main/opencode-command/amarcord.md \
+  -o ~/.config/opencode/commands/amarcord.md
 ```
 
-This clones the team repo and symlinks all skills into place via `stow`.
-From now on, `/amarcord` will open a PR instead of saving locally only.
+That's it. No config, no setup, no dependencies.
 
 ---
 
-## How team sync works
+## Usage
 
-When `/amarcord` extracts a skill, it:
-
-1. Detects the namespace from the current git repo (`my-project`, `pleasetriage`, `general`, etc.)
-2. Checks existing skills for duplicates — updates instead of creating if already covered
-3. Saves locally (so it's available immediately)
-4. Creates a branch in the team repo and opens a PR
-
-Skills are stored in the team repo as:
-```
-opencode/{namespace}:{skill-name}.md       ← for opencode
-claude/{namespace}:{skill-name}/SKILL.md   ← for Claude Code
-```
-
-Everyone reviews, merges, and pulls. One discovery → everyone benefits.
-
----
-
-## Namespace convention
-
-Skill filenames include the project they came from:
+At the end of any session where you debugged something, found a workaround, or had to figure out something non-obvious:
 
 ```
-my-project:mcp-proxy-namespaced-params.md
-general:git-rebase-conflict-resolution.md
-pleasetriage:vercel-dns-config.md
+/amarcord
 ```
 
-This keeps project-specific skills separate from general ones and makes it easy
-to grep for what you need.
+The agent will review the session and either:
+- Extract 1–3 commands and tell you what it saved
+- Say "nothing worth extracting" if the session was routine
 
----
+### Manual hint
 
-## Team repo structure
+If you know something specific is worth saving:
 
 ```
-team-skills/
-  opencode/                    ← stowed to ~/.config/opencode/commands/
-    my-project:some-fix.md
-    general:some-pattern.md
-  claude/                      ← stowed to ~/.claude/skills/
-    my-project:some-fix/
-      SKILL.md
-    general:some-pattern/
-      SKILL.md
-  README.md
+/amarcord "the MPS dtype issue we just fixed"
 ```
 
 ---
 
-## Pull latest team skills
+## What Gets Saved
 
-```bash
-cd ~/.local/share/amarcord/team-skills
-git pull
-stow opencode --target=~/.config/opencode/commands --restow
-stow claude   --target=~/.claude --restow
-```
+**Yes:**
+- Solution required >10 min of investigation
+- Error message was misleading (root cause wasn't obvious)
+- Workaround found through trial and error
+- Project-specific pattern not in any docs
+- Tool integration knowledge the docs don't cover
+
+**No:**
+- Standard stuff you'd find in the official docs in 30 seconds
+- One-off hacks with zero reuse potential
+- Secrets, credentials, anything sensitive
 
 ---
 
-## Requirements
+## Where Saved Commands Live
 
-- `git` and `gh` CLI (for team sync + PRs)
-- `stow` (`brew install stow` / `apt install stow`) for team setup
-- opencode or Claude Code
+```
+~/.config/opencode/commands/
+├── amarcord.md                    ← this tool
+├── mps-dtype-mismatch.md          ← extracted from a PyTorch session
+├── opencode-cwd-not-inherited.md  ← extracted from an opencode debugging session
+└── ...                            ← everything amarcord has learned
+```
+
+Each file is just markdown. You can read them, edit them, delete them. They're yours.
+
+---
+
+## Example Extracted Command
+
+After a session debugging PyTorch on Apple Silicon, amarcord might save:
+
+```markdown
+---
+description: Fix device mismatch errors when using PyTorch on Apple Silicon MPS.
+Use when you get "Expected all tensors to be on the same device."
+---
+
+# PyTorch MPS Device Mismatch
+
+## Problem
+RuntimeError: Expected all tensors to be on the same device
+
+## Solution
+Always pass device= explicitly when creating tensors:
+
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")
+    model = model.to(device)
+    token = torch.tensor([[id]], device=device)   # ← explicit device
+
+When loading checkpoints:
+    ckpt = torch.load(path, map_location=device)  # ← not map_location="cpu"
+
+## Why It Works
+MPS and CPU tensors can't interact. map_location="cpu" silently loads to CPU
+even when MPS is available.
+
+## Watch Out For
+numpy() requires .cpu() first: tensor.cpu().numpy()
+```
 
 ---
 
 ## Credit
 
-Inspired by [Claudeception](https://github.com/blader/Claudeception) by [@blader](https://github.com/blader).
-Team sync concept from a conversation with Luca Battistini and Michele Battelli.
+Port of [Claudeception](https://github.com/blader/Claudeception) by [@blader](https://github.com/blader), adapted for [opencode](https://opencode.ai).

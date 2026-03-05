@@ -1,33 +1,17 @@
 #!/bin/bash
 set -e
 
-OPENCODE_DIR="$HOME/.config/opencode/commands"
-CLAUDE_DIR="$HOME/.claude/skills/amarcord"
-BASE_URL="https://raw.githubusercontent.com/rhighs/amarcord/main"
+COMMANDS_DIR="$HOME/.config/opencode/commands"
+AMARCORD_URL="https://raw.githubusercontent.com/rhighs/amarcord/main/opencode-command/amarcord.md"
+
+mkdir -p "$COMMANDS_DIR"
 
 echo "Installing amarcord..."
-echo ""
-
-# opencode
-if [ -d "$OPENCODE_DIR" ] || command -v opencode &>/dev/null; then
-  mkdir -p "$OPENCODE_DIR"
-  curl -fsSL "$BASE_URL/opencode-command/amarcord.md" -o "$OPENCODE_DIR/amarcord.md"
-  echo "✓ opencode: $OPENCODE_DIR/amarcord.md"
-fi
-
-# Claude Code
-if [ -d "$HOME/.claude" ] || command -v claude &>/dev/null; then
-  mkdir -p "$CLAUDE_DIR"
-  curl -fsSL "$BASE_URL/SKILL.md" -o "$CLAUDE_DIR/SKILL.md"
-  echo "✓ Claude Code: $CLAUDE_DIR/SKILL.md"
-fi
+curl -fsSL "$AMARCORD_URL" -o "$COMMANDS_DIR/amarcord.md"
 
 echo ""
-echo "Done."
+echo "Done. amarcord installed at:"
+echo "  $COMMANDS_DIR/amarcord.md"
 echo ""
-echo "Usage:"
-echo "  opencode   → /amarcord"
-echo "  claude     → /amarcord"
-echo ""
-echo "Team sync setup:"
-echo "  curl -fsSL $BASE_URL/scripts/setup-team.sh | bash -s -- https://github.com/YOUR-ORG/team-skills"
+echo "Usage: run /amarcord at the end of any opencode session where"
+echo "you learned something non-obvious."
