@@ -1,86 +1,117 @@
 ---
 name: amarcord
 description: |
-  Continuous learning system for opencode. Extracts reusable knowledge from work sessions
-  and saves it as new opencode commands. Triggers: (1) /amarcord command, (2) "save this as a skill",
-  (3) "what did we learn?", (4) after any non-obvious debugging or trial-and-error discovery.
-version: 1.0.0
+  Continuous learning system for AI coding agents. Extracts reusable knowledge from
+  work sessions and saves it as skills/commands for future sessions.
+  Triggers: (1) /amarcord command, (2) "save this as a skill", (3) "what did we learn?",
+  (4) after any non-obvious debugging, workaround, or trial-and-error discovery.
+  Supports team sync: opens a PR to a shared repo so the whole team benefits.
+version: 2.0.0
+allowed-tools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+  - Grep
+  - Glob
 ---
 
-# Amarcord
+# amarcord
 
-You are Amarcord: a continuous learning system that extracts reusable knowledge from work sessions
-and codifies it as new opencode commands. This enables autonomous improvement over time.
+Makes your AI agent remember what it learned, and share it with the team.
 
 ## Core Principle
 
-When you discover something non-obvious — a workaround, a debugging technique, a project-specific pattern —
-save it as a command file so future sessions can load it automatically.
+When you discover something non-obvious — a workaround, a debugging technique,
+a project-specific pattern — save it so future sessions start smarter.
+If team sync is configured, open a PR so everyone benefits.
 
-## When to Extract
+## Step 1 — Review the session
 
-Extract a command when you encounter:
+Ask: what required trial and error? What was the error message misleading about?
+What would have saved time if already documented?
 
-1. **Non-obvious solutions**: Required significant investigation, not immediately apparent from docs
-2. **Project-specific patterns**: Conventions or decisions specific to this codebase
-3. **Workarounds**: Solutions to bugs or limitations in tools/frameworks
-4. **Reusable workflows**: Multi-step processes worth automating
+If nothing non-obvious happened → say so and stop.
 
-Do NOT extract:
-- Simple, obvious solutions documented everywhere
-- One-off fixes with no future value
-- Very project-specific hacks with zero reuse potential
+## Step 2 — Determine namespace
 
-## Output Format
+```bash
+git remote get-url origin 2>/dev/null | sed 's|.*[:/]\([^/]*\)/\([^/]*\)\.git|\1/\2|; s|.*[:/]\([^/]*\)/\([^/]*\)|\1/\2|' | cut -d'/' -f2
+```
 
-Create a new command file at `~/.config/opencode/commands/<kebab-name>.md`:
+Use the repo name as namespace. No git remote → use `general`.
+Skill name format: `{namespace}:{kebab-description}`
 
-\`\`\`markdown
+## Step 3 — Duplicate detection
+
+```bash
+# Claude Code
+ls ~/.claude/skills/*/SKILL.md 2>/dev/null | xargs -I{} head -5 {}
+
+# opencode
+ls ~/.config/opencode/commands/*.md 2>/dev/null | xargs -I{} head -5 {}
+```
+
+Look at their descriptions. Is what you're about to save already covered?
+- Duplicate → update existing file
+- Partial overlap → add new section to existing file
+- No overlap → create new
+
+## Step 4 — Write the skill
+
+### Claude Code
+Save to `~/.claude/skills/{namespace}:{name}/SKILL.md`:
+
+```yaml
 ---
-description: One-line description of what this command does and when to use it
+name: {namespace}:{name}
+description: |
+  Specific enough for semantic matching: what problem, what symptom, when to use
+version: 1.0.0
 ---
 
-# <Title>
+# Title
 
 ## Problem
-<What problem this solves — specific error, pattern, or situation>
-
-## Context
-<When this applies — framework, project type, circumstances>
+Exact symptom or error
 
 ## Solution
-<Step-by-step solution or pattern>
+Step-by-step fix with code examples
 
 ## Why It Works
-<Brief explanation of root cause / why this solution works>
+Root cause explanation
 
 ## Watch Out For
-<Edge cases, gotchas, or situations where this doesn't apply>
-\`\`\`
+Edge cases
+```
 
-## Extraction Protocol
+### opencode
+Save same content to `~/.config/opencode/commands/{namespace}:{name}.md`
+with a simpler frontmatter (no `name` or `allowed-tools` needed).
 
-When triggered:
+## Step 5 — Team sync (if configured)
 
-1. **Review the session** — what was the hardest part? What required trial and error?
-2. **Evaluate reusability** — would this help in a future project? Is it non-obvious?
-3. **Check existing commands first** — scan `~/.config/opencode/commands/` for related files to update instead of creating a duplicate
-4. **If yes**: write the command file to `~/.config/opencode/commands/`
-5. **If no**: say "Nothing worth extracting from this session."
+```bash
+cat ~/.config/amarcord/team.conf 2>/dev/null
+```
 
-## Session Review (when /amarcord is invoked)
+If `TEAM_REPO_PATH` is set, run:
+```bash
+~/.config/amarcord/sync.sh {skill-file-path}
+```
 
-1. Review what was built or fixed this session
-2. List things that required investigation or trial-and-error
-3. For each candidate: apply quality criteria (reusable? non-trivial? verified?)
-4. Extract 1-3 commands maximum — quality over quantity
-5. Report: "Extracted: <name> → ~/.config/opencode/commands/<name>.md"
+This copies the skill to both `opencode/` and `claude/` directories in the team repo
+and opens a PR. If not configured, skip silently.
 
 ## Quality Criteria
 
-Before saving, verify:
-- [ ] Reusable across future projects, not just this one
-- [ ] Non-trivial: requires discovery, not just reading the docs
-- [ ] Specific enough to be actionable
-- [ ] Verified: the solution actually worked
-- [ ] No secrets or credentials included
+**Save it if:**
+- Required significant investigation — not immediately obvious
+- Error message was misleading
+- Workaround found through trial and error
+- Project-specific pattern not in official docs
+
+**Skip it if:**
+- Answer is in the docs in under a minute
+- Zero reuse potential
+- One-time fix that'll never apply elsewhere
